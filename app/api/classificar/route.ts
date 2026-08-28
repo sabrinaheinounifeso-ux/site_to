@@ -74,14 +74,15 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Camada 1 — regra determinística de prioridade (DA).
+  // Camada 1 — regras determinísticas de prioridade (DA/DATO, Coordenação
+  // para assuntos oficiais, TOCA para projetos estudantis).
   const regraForcada = aplicarRegraPrioridade(texto);
   if (regraForcada) {
     const principal = await buscarEspaco(regraForcada.destino);
     await registrarLog({ texto, destino: regraForcada.destino, confianca: 1, precisouEsclarecer: false });
     return NextResponse.json({
       precisaEsclarecer: false,
-      categoria: "institucional",
+      categoria: regraForcada.categoria,
       motivo: regraForcada.motivo,
       principal,
       secundario: null,

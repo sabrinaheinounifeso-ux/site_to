@@ -55,7 +55,7 @@ create policy "interacoes_log: inserção pública" on interacoes_log
 -- cada espaço antes de publicar. Todo o conteúdo abaixo é placeholder.
 insert into espacos (sigla, nome, funcao, atende, nao_atende, responsaveis, instagram, whatsapp, email, localizacao, horario, orientacoes)
 values
-  ('DA', 'Diretório Acadêmico de TO',
+  ('DA', 'Diretório Acadêmico de TO (DATO)',
    'Representa os alunos, media diálogo institucional e acompanha reivindicações e direitos estudantis.',
    array['problemas com professores','notas lançadas incorretamente','reivindicações coletivas','dúvidas sobre direitos'],
    array['organização de festas e eventos de integração','divulgação de pesquisas'],

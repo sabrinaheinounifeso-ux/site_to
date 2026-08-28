@@ -20,6 +20,12 @@ fornecidos no contexto abaixo. Nunca use conhecimento próprio sobre a
 universidade — se a informação não estiver no contexto, isso não deve
 influenciar a decisão.
 
+Pistas de linguagem que já vêm resolvidas antes desta etapa (regras fixas,
+você só as vê aqui para manter coerência caso apareçam em frases ambíguas):
+"DATO" é apelido do DA (Diretório Acadêmico de TO) e conta como menção ao
+DA; assuntos que pedem resposta/procedimento oficial são da Coordenação;
+projetos feitos por alunos para a comunidade estudantil são da TOCA.
+
 Formato de saída obrigatório (JSON puro):
 {
   "destino_principal": "DA" | "TOCA" | "PERFIL_TO" | "COORDENACAO" | null,
