@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/lib/supabase";
 import { classificarComIA } from "@/lib/anthropic";
 import { aplicarRegraPrioridade } from "@/lib/rules";
-import { CLARIFY_OPTIONS, FALLBACK_EMAIL, type Espaco, type Sigla } from "@/lib/types";
+import { CLARIFY_OPTIONS, FALLBACK_EMAIL, type Sigla } from "@/lib/types";
 import { ehPerguntaDeLocalizacao, encontrarLocalNoTexto } from "@/lib/locais";
+import { ESPACOS } from "@/lib/espacos-data";
 
 const CONFIANCA_MINIMA = 0.4;
 
@@ -13,34 +13,8 @@ const bodySchema = z.object({
   categoriaForcada: z.string().optional(),
 });
 
-async function buscarEspaco(sigla: Sigla): Promise<Espaco | null> {
-  const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("espacos")
-    .select("*")
-    .eq("sigla", sigla)
-    .maybeSingle();
-  if (error || !data) return null;
-  return data as Espaco;
-}
-
-async function registrarLog(params: {
-  texto: string;
-  destino: string | null;
-  confianca: number | null;
-  precisouEsclarecer: boolean;
-}) {
-  try {
-    const supabase = getSupabaseServerClient();
-    await supabase.from("interacoes_log").insert({
-      texto_usuario: params.texto.slice(0, 500),
-      destino: params.destino,
-      confianca: params.confianca,
-      precisou_esclarecer: params.precisouEsclarecer,
-    });
-  } catch {
-    // log é best-effort — nunca deve derrubar a resposta ao aluno
-  }
+function buscarEspaco(sigla: Sigla) {
+  return ESPACOS[sigla] ?? null;
 }
 
 export async function POST(req: NextRequest) {
@@ -55,7 +29,6 @@ export async function POST(req: NextRequest) {
   // primeira mensagem (sem categoriaForcada), antes de qualquer outra regra.
   if (!categoriaForcada && ehPerguntaDeLocalizacao(texto)) {
     const local = encontrarLocalNoTexto(texto);
-    await registrarLog({ texto, destino: null, confianca: 1, precisouEsclarecer: false });
     return NextResponse.json({
       precisaEsclarecer: false,
       categoria: "localizacao",
@@ -78,7 +51,6 @@ export async function POST(req: NextRequest) {
       // "Outro" — a demanda foge dos quatro espaços cadastrados. Em vez de
       // devolver pra tela de esclarecimento (loop sem saída), encerra aqui
       // com um contato de reserva.
-      await registrarLog({ texto, destino: null, confianca: null, precisouEsclarecer: false });
       return NextResponse.json({
         precisaEsclarecer: false,
         foraDoSistema: true,
@@ -90,13 +62,11 @@ export async function POST(req: NextRequest) {
         contatoFallback: FALLBACK_EMAIL,
       });
     }
-    const principal = await buscarEspaco(opcao.sigla);
-    await registrarLog({ texto, destino: opcao.sigla, confianca: 1, precisouEsclarecer: false });
     return NextResponse.json({
       precisaEsclarecer: false,
       categoria: categoriaForcada,
       motivo: `Você indicou "${opcao.label.replace(/^[^\s]+\s/, "")}" — esse é o espaço mais direto para esse tipo de demanda.`,
-      principal,
+      principal: buscarEspaco(opcao.sigla),
       secundario: null,
     });
   }
@@ -105,29 +75,22 @@ export async function POST(req: NextRequest) {
   // para assuntos oficiais, TOCA para projetos estudantis).
   const regraForcada = aplicarRegraPrioridade(texto);
   if (regraForcada) {
-    const principal = await buscarEspaco(regraForcada.destino);
-    await registrarLog({ texto, destino: regraForcada.destino, confianca: 1, precisouEsclarecer: false });
     return NextResponse.json({
       precisaEsclarecer: false,
       categoria: regraForcada.categoria,
       motivo: regraForcada.motivo,
-      principal,
+      principal: buscarEspaco(regraForcada.destino),
       secundario: null,
     });
   }
 
-  // Camada 2 — classificação por IA com o conteúdo do banco como contexto.
-  let espacosContexto: Pick<Espaco, "sigla" | "nome" | "atende" | "nao_atende">[] = [];
-  try {
-    const supabase = getSupabaseServerClient();
-    const { data } = await supabase.from("espacos").select("sigla, nome, atende, nao_atende");
-    espacosContexto = data ?? [];
-  } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Erro ao consultar os espaços cadastrados." },
-      { status: 500 }
-    );
-  }
+  // Camada 2 — classificação por IA com o conteúdo cadastrado como contexto.
+  const espacosContexto = Object.values(ESPACOS).map(({ sigla, nome, atende, nao_atende }) => ({
+    sigla,
+    nome,
+    atende,
+    nao_atende,
+  }));
 
   let classificacao;
   try {
@@ -145,12 +108,6 @@ export async function POST(req: NextRequest) {
     !classificacao.destino_principal ||
     classificacao.confianca < CONFIANCA_MINIMA
   ) {
-    await registrarLog({
-      texto,
-      destino: classificacao?.destino_principal ?? null,
-      confianca: classificacao?.confianca ?? null,
-      precisouEsclarecer: true,
-    });
     return NextResponse.json({
       precisaEsclarecer: true,
       categoria: classificacao?.categoria ?? "indefinida",
@@ -161,23 +118,11 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const principal = await buscarEspaco(classificacao.destino_principal);
-  const secundario = classificacao.destino_secundario
-    ? await buscarEspaco(classificacao.destino_secundario)
-    : null;
-
-  await registrarLog({
-    texto,
-    destino: classificacao.destino_principal,
-    confianca: classificacao.confianca,
-    precisouEsclarecer: false,
-  });
-
   return NextResponse.json({
     precisaEsclarecer: false,
     categoria: classificacao.categoria,
     motivo: classificacao.motivo_curto,
-    principal,
-    secundario,
+    principal: buscarEspaco(classificacao.destino_principal),
+    secundario: classificacao.destino_secundario ? buscarEspaco(classificacao.destino_secundario) : null,
   });
 }
