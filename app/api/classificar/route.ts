@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { classificarComIA } from "@/lib/anthropic";
 import { aplicarRegraPrioridade } from "@/lib/rules";
-import { CLARIFY_OPTIONS, type Espaco, type Sigla } from "@/lib/types";
+import { CLARIFY_OPTIONS, FALLBACK_EMAIL, type Espaco, type Sigla } from "@/lib/types";
 
 const CONFIANCA_MINIMA = 0.4;
 
@@ -53,14 +53,19 @@ export async function POST(req: NextRequest) {
   if (categoriaForcada) {
     const opcao = CLARIFY_OPTIONS.find((o) => o.key === categoriaForcada);
     if (!opcao || !opcao.sigla) {
-      await registrarLog({ texto, destino: null, confianca: null, precisouEsclarecer: true });
+      // "Outro" — a demanda foge dos quatro espaços cadastrados. Em vez de
+      // devolver pra tela de esclarecimento (loop sem saída), encerra aqui
+      // com um contato de reserva.
+      await registrarLog({ texto, destino: null, confianca: null, precisouEsclarecer: false });
       return NextResponse.json({
-        precisaEsclarecer: true,
+        precisaEsclarecer: false,
+        foraDoSistema: true,
         categoria: "outro",
         motivo:
-          "Não conseguimos identificar um espaço específico. Tente descrever com mais detalhes o que está acontecendo.",
+          "Sua dúvida não se encaixa diretamente no DA, na TOCA, no Perfil de TO ou na Coordenação.",
         principal: null,
         secundario: null,
+        contatoFallback: FALLBACK_EMAIL,
       });
     }
     const principal = await buscarEspaco(opcao.sigla);

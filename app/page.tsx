@@ -11,6 +11,8 @@ interface ApiResposta {
   motivo: string;
   principal: Espaco | null;
   secundario: Espaco | null;
+  foraDoSistema?: boolean;
+  contatoFallback?: string;
 }
 
 const SIGLA_LABEL: Record<Sigla, string> = {
@@ -136,7 +138,26 @@ export default function Home() {
                 <ResultCard espaco={resposta.secundario} motivo={null} destaque={false} />
               </div>
             )}
-            {!resposta.principal && (
+            {!resposta.principal && resposta.foraDoSistema && (
+              <div className="bg-surface border border-line rounded-2xl p-5 sm:p-6 shadow-sm">
+                <span className="inline-block rounded-full px-3 py-1 text-xs font-semibold bg-coral-tint text-coral">
+                  Fora do DA, da TOCA, do Perfil de TO e da Coordenação
+                </span>
+                <p className="text-ink mt-4">{resposta.motivo}</p>
+                <p className="text-ink mt-3">
+                  Manda um e-mail pra gente que a gente te ajuda a achar o caminho certo:
+                </p>
+                {resposta.contatoFallback && (
+                  <a
+                    href={`mailto:${resposta.contatoFallback}`}
+                    className="mt-2 inline-block text-teal underline font-medium"
+                  >
+                    {resposta.contatoFallback}
+                  </a>
+                )}
+              </div>
+            )}
+            {!resposta.principal && !resposta.foraDoSistema && (
               <div className="bg-surface border border-line rounded-2xl p-5 text-ink-soft">
                 Não encontrei esse espaço cadastrado ainda. Assim que os dados forem cadastrados no
                 painel administrativo, essa resposta aparece aqui.

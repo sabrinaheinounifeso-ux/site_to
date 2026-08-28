@@ -1,5 +1,9 @@
 export type Sigla = "DA" | "TOCA" | "PERFIL_TO" | "COORDENACAO";
 
+// Contato de reserva: usado só quando a demanda não se encaixa em nenhum
+// dos quatro espaços cadastrados (fluxo "outro" da tela de esclarecimento).
+export const FALLBACK_EMAIL = "contatotocaatletica@gmail.com";
+
 export interface Espaco {
   id: string;
   sigla: Sigla;
