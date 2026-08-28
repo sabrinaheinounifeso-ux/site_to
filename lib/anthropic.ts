@@ -71,7 +71,10 @@ export async function classificarComIA(
 ): Promise<ClassificacaoIA | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY não configurada nas variáveis de ambiente.");
+    // Sem chave configurada, a camada 2 é pulada — quem chamou trata isso
+    // como "sem classificação" e cai na camada 3 (tela de esclarecimento),
+    // em vez de derrubar a resposta com um erro.
+    return null;
   }
 
   const client = new Anthropic({ apiKey });
