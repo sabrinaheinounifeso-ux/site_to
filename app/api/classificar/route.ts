@@ -4,6 +4,7 @@ import { getSupabaseServerClient } from "@/lib/supabase";
 import { classificarComIA } from "@/lib/anthropic";
 import { aplicarRegraPrioridade } from "@/lib/rules";
 import { CLARIFY_OPTIONS, FALLBACK_EMAIL, type Espaco, type Sigla } from "@/lib/types";
+import { ehPerguntaDeLocalizacao, encontrarLocalNoTexto } from "@/lib/locais";
 
 const CONFIANCA_MINIMA = 0.4;
 
@@ -48,6 +49,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Requisição inválida." }, { status: 400 });
   }
   const { texto, categoriaForcada } = parsed.data;
+
+  // Pergunta de localização física ("onde fica...") — independente de qual
+  // espaço trata do assunto, mostra o mapa do campus direto. Só roda na
+  // primeira mensagem (sem categoriaForcada), antes de qualquer outra regra.
+  if (!categoriaForcada && ehPerguntaDeLocalizacao(texto)) {
+    const local = encontrarLocalNoTexto(texto);
+    await registrarLog({ texto, destino: null, confianca: 1, precisouEsclarecer: false });
+    return NextResponse.json({
+      precisaEsclarecer: false,
+      categoria: "localizacao",
+      motivo: local
+        ? `Isso fica no ponto ${local.numero} do mapa: ${local.nome}.`
+        : "Aqui está o mapa do campus. Se for sobre uma sala de aula específica, o prédio e horário certos são confirmados com a Coordenação.",
+      principal: null,
+      secundario: null,
+      mapa: {
+        url: "/mapa-campus.jpg",
+        local: local ? { numero: local.numero, nome: local.nome, cor: local.cor } : null,
+      },
+    });
+  }
 
   // Caminho vindo da tela de esclarecimento: mapeamento direto, sem IA.
   if (categoriaForcada) {

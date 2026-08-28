@@ -13,6 +13,10 @@ interface ApiResposta {
   secundario: Espaco | null;
   foraDoSistema?: boolean;
   contatoFallback?: string;
+  mapa?: {
+    url: string;
+    local: { numero: number; nome: string; cor: string } | null;
+  };
 }
 
 const SIGLA_LABEL: Record<Sigla, string> = {
@@ -129,16 +133,17 @@ export default function Home() {
 
         {step === "result" && resposta && (
           <div className="space-y-4">
-            {resposta.principal && (
+            {resposta.mapa && <MapaCard mapa={resposta.mapa} motivo={resposta.motivo} />}
+            {!resposta.mapa && resposta.principal && (
               <ResultCard espaco={resposta.principal} motivo={resposta.motivo} destaque />
             )}
-            {resposta.secundario && (
+            {!resposta.mapa && resposta.secundario && (
               <div>
                 <p className="text-xs uppercase tracking-wide text-ink-faint mb-2">Também pode envolver</p>
                 <ResultCard espaco={resposta.secundario} motivo={null} destaque={false} />
               </div>
             )}
-            {!resposta.principal && resposta.foraDoSistema && (
+            {!resposta.mapa && !resposta.principal && resposta.foraDoSistema && (
               <div className="bg-surface border border-line rounded-2xl p-5 sm:p-6 shadow-sm">
                 <span className="inline-block rounded-full px-3 py-1 text-xs font-semibold bg-coral-tint text-coral">
                   Fora do DA, da TOCA, do Perfil de TO e da Coordenação
@@ -157,7 +162,7 @@ export default function Home() {
                 )}
               </div>
             )}
-            {!resposta.principal && !resposta.foraDoSistema && (
+            {!resposta.mapa && !resposta.principal && !resposta.foraDoSistema && (
               <div className="bg-surface border border-line rounded-2xl p-5 text-ink-soft">
                 Não encontrei esse espaço cadastrado ainda. Assim que os dados forem cadastrados no
                 painel administrativo, essa resposta aparece aqui.
@@ -240,6 +245,40 @@ function ResultCard({
       <p className="mt-4 text-xs text-ink-faint">
         Dados atualizados em {new Date(espaco.atualizado_em).toLocaleDateString("pt-BR")}
       </p>
+    </div>
+  );
+}
+
+function MapaCard({
+  mapa,
+  motivo,
+}: {
+  mapa: { url: string; local: { numero: number; nome: string; cor: string } | null };
+  motivo: string;
+}) {
+  return (
+    <div className="bg-surface border border-line rounded-2xl p-5 sm:p-6 shadow-sm">
+      <span className="inline-block rounded-full px-3 py-1 text-xs font-semibold bg-teal-tint text-teal-strong">
+        Localização no campus
+      </span>
+      <p className="text-ink mt-4">{motivo}</p>
+      {mapa.local && (
+        <div className="mt-3 flex items-center gap-2">
+          <span
+            className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white"
+            style={{ backgroundColor: mapa.local.cor }}
+          >
+            {mapa.local.numero}
+          </span>
+          <span className="text-sm text-ink-soft">{mapa.local.nome}</span>
+        </div>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={mapa.url}
+        alt="Mapa do campus com os pontos numerados de cada espaço"
+        className="mt-4 w-full rounded-xl border border-line"
+      />
     </div>
   );
 }
