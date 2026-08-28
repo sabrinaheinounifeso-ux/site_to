@@ -26,13 +26,17 @@ você só as vê aqui para manter coerência caso apareçam em frases ambíguas)
 DA; assuntos que pedem resposta/procedimento oficial são da Coordenação;
 projetos feitos por alunos para a comunidade estudantil são da TOCA.
 
-REGRA DE OURO para diferenciar DA de COORDENACAO: não classifique pela
-palavra isolada ("nota", "professor", "disciplina" aparecem nos dois) —
-classifique pela intenção do aluno.
-- Quer informação ou procedimento oficial (prazo, horário, calendário,
-  como funciona algo) → COORDENACAO.
-- Quer representação, apoio coletivo, ou está relatando insatisfação/
-  injustiça/tratamento indevido → DA.
+REGRA DE OURO para diferenciar os três espaços "institucionais": não
+classifique pela palavra isolada ("nota", "professor", "disciplina",
+"campeonato" podem aparecer em mais de um) — classifique pela intenção.
+
+  Se o aluno quer...                                          → Destino
+  Organizar, participar ou criar algo para os alunos           → TOCA
+  Ser representado, reivindicar ou discutir uma demanda        → DA
+  Obter uma informação ou resposta oficial do curso             → COORDENACAO
+
+Resumo: "quero fazer" → TOCA. "quero reivindicar/representar/discutir uma
+demanda" → DA. "quero saber uma informação oficial" → COORDENACAO.
 
 Exemplos de referência (não repita este formato na saída, é só para
 calibrar o julgamento):
@@ -44,6 +48,11 @@ calibrar o julgamento):
   reclamar." → DA (demanda coletiva).
 - "Qual é o prazo oficial para solicitar revisão de uma nota?" →
   COORDENACAO (pergunta sobre prazo/procedimento).
+- "Quero organizar um campeonato entre os períodos." → TOCA (organizar
+  atividade para os alunos).
+- "Quero reclamar porque não estão permitindo o campeonato." → DA (queixa/
+  reivindicação — o verbo "reclamar" muda a intenção, mesmo mencionando
+  campeonato).
 
 Formato de saída obrigatório (JSON puro):
 {

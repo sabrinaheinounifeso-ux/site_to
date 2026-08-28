@@ -15,20 +15,55 @@
 import type { Sigla } from "./types";
 
 // DA — menção direta ao DA/DATO, ou sinais de representação, reivindicação,
-// queixa coletiva ou tratamento injusto por parte de professor/turma.
+// demanda coletiva ou tratamento injusto. Regra-mãe: "quero reivindicar /
+// representar / discutir uma demanda" → DA.
 const DA_PATTERNS: RegExp[] = [
+  // menção direta
   /\bDA\b/, // sigla em maiúsculas — evita casar com a preposição "da"
   /\bDATO\b/i, // apelido do DA de TO (DA + TO)
   /diret[oó]rio acad[eê]mico/i,
   /\bliga acad[eê]mica\b/i,
-  /reivindica[cç][aã]o/i,
-  /\bmeus? direitos?\b/i,
-  /representa[cç][aã]o estudantil/i,
   /di[aá]logo institucional/i,
+
+  // reivindicações
+  /reivindica[cç][aã]o/i,
   /reclamar|reclama[cç][aã]o/i,
-  /professor.{0,40}(injust|desrespeit|maltrat)/i,
+  /(turma|alunos?).{0,20}insatisfeit/i,
+  /levar (uma )?demanda/i,
+  /apresentar (uma )?demanda/i,
+  /demanda (dos alunos|coletiva|dos estudantes)/i,
+  /quem (pode|vai) representar/i,
+
+  // representação estudantil
+  /representa[cç][aã]o estudantil/i,
+  /\bmeus? direitos?\b/i,
+  /(nossos|nosso) direitos? como alunos/i,
+  /quem representa os alunos/i,
+  /levar uma quest[aã]o (dos estudantes|para a faculdade)/i,
+  /como funciona a representa[cç][aã]o estudantil/i,
+
+  // problemas com professores
+  /problema com (um |uma )?professor/i,
+  /conflito com (um )?professor/i,
+  /professor.{0,40}(injust|desrespeit|maltrat|atitude)/i,
   /turma.{0,40}(injust|desrespeit|maltrat)/i,
-  /v[aá]rios? (alunos?|colegas?|da turma).{0,40}(mesmo problema|mesma situa[cç][aã]o|mesma disciplina)/i,
+  /orienta[cç][aã]o sobre um conflito/i,
+
+  // demandas acadêmicas coletivas
+  /turma inteira.{0,40}(problema|disciplina)/i,
+  /v[aá]rios? (alunos?|colegas?|per[ií]odos?|da turma).{0,60}(mesmo problema|mesma situa[cç][aã]o|mesma disciplina|mesma mat[eé]ria|dificuldade)/i,
+  /forma como (uma|a) disciplina est[aá] sendo conduzida/i,
+  /levar (uma )?quest[aã]o acad[eê]mica/i,
+
+  // direitos e situações injustas
+  /respeitando (nossos|os) direitos/i,
+  /situa[cç][aã]o.{0,20}injusta/i,
+  /decis[aã]o que prejudicou a turma/i,
+
+  // coletivo / organizar a turma
+  /juntar os alunos para discutir/i,
+  /representar a turma/i,
+  /algu[eé]m para representar/i,
 ];
 
 // Menções que, mesmo citando DA/DATO/liga, são claramente sobre divulgar um
@@ -103,13 +138,63 @@ const COORDENACAO_PATTERNS: RegExp[] = [
   /d[uú]vida sobre o funcionamento do curso/i,
 ];
 
-// TOCA — projetos e produções dos próprios alunos, voltados à comunidade
-// estudantil (não confundir com pesquisa/extensão do curso, que é Perfil
-// de TO).
+// TOCA — organizar, participar ou criar algo para os alunos: eventos,
+// esporte, rolês, cultura, integração, ideias e produtos/identidade da
+// turma. Regra-mãe: "quero fazer/organizar/propor algo" → TOCA (desde que
+// nenhum padrão de DA — queixa, reivindicação — tenha disparado antes).
 const TOCA_PATTERNS: RegExp[] = [
+  // projetos e produtos de alunos (categoria original)
   /projetos? estudant/i,
   /projeto de alun[oa]s?/i,
   /produtos? (feitos? por|de|dos?) alun[oa]s?/i,
+
+  // eventos e festas
+  /\bfesta\b/i,
+  /confraterniza[cç][aã]o/i,
+  /evento de integra[cç][aã]o/i,
+  /sugerir um evento/i,
+  /organizar um evento/i,
+
+  // esportes
+  /campeonato/i,
+  /gincana/i,
+  /torneio/i,
+  /competi[cç][aã]o entre (os )?cursos/i,
+  /time (para )?representar o curso/i,
+
+  // rolês e viagens
+  /\bpasseio\b/i,
+  /bate-?volta/i,
+  /viagem entre (os )?alunos/i,
+  /\brol[eê]/i, // "rolê" — sem \b final: acento quebra a detecção de fronteira de palavra
+
+  // cultura
+  /ida ao teatro/i,
+  /atividade cultural/i,
+  /sess[aã]o de cinema/i,
+  /atividade art[ií]stica/i,
+  /\bteatro\b|\bm[uú]sica\b|\barte\b/i,
+
+  // integração
+  /integrar os per[ií]odos/i,
+  /atividade (para os |de )?calouros/i,
+  /recep[cç][aã]o para (os )?calouros/i,
+  /aproximar.{0,20}alunos/i,
+  /atividade de integra[cç][aã]o/i,
+
+  // ideias para movimentar os alunos
+  /movimentar a faculdade/i,
+  /ideia de atividade/i,
+  /ideia para (o curso|os alunos)/i,
+  /a[cç][aã]o para o curso/i,
+
+  // produtos, vendas e identidade da turma
+  /vender uma camisa/i,
+  /criar uma camiseta/i,
+  /camiseta da turma/i,
+  /venda coletiva/i,
+  /tenho um produto/i,
+  /divulgar (uma coisa|algo) que estou vendendo/i,
 ];
 
 export interface RegraForcada {
