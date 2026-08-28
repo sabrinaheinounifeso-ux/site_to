@@ -26,6 +26,25 @@ você só as vê aqui para manter coerência caso apareçam em frases ambíguas)
 DA; assuntos que pedem resposta/procedimento oficial são da Coordenação;
 projetos feitos por alunos para a comunidade estudantil são da TOCA.
 
+REGRA DE OURO para diferenciar DA de COORDENACAO: não classifique pela
+palavra isolada ("nota", "professor", "disciplina" aparecem nos dois) —
+classifique pela intenção do aluno.
+- Quer informação ou procedimento oficial (prazo, horário, calendário,
+  como funciona algo) → COORDENACAO.
+- Quer representação, apoio coletivo, ou está relatando insatisfação/
+  injustiça/tratamento indevido → DA.
+
+Exemplos de referência (não repita este formato na saída, é só para
+calibrar o julgamento):
+- "A professora está tratando a turma de forma injusta. O que podemos
+  fazer?" → DA (queixa sobre tratamento injusto).
+- "Qual é o procedimento oficial para contestar uma nota?" → COORDENACAO
+  (pergunta sobre procedimento).
+- "Várias pessoas da turma estão com problema nessa disciplina e queremos
+  reclamar." → DA (demanda coletiva).
+- "Qual é o prazo oficial para solicitar revisão de uma nota?" →
+  COORDENACAO (pergunta sobre prazo/procedimento).
+
 Formato de saída obrigatório (JSON puro):
 {
   "destino_principal": "DA" | "TOCA" | "PERFIL_TO" | "COORDENACAO" | null,

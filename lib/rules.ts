@@ -2,22 +2,33 @@
 // por IA. Cada bloco abaixo é uma "variável" fixa de negócio: se o texto
 // bate no padrão, o destino é decidido direto, sem depender do modelo.
 // Ordem de checagem: DA → COORDENAÇÃO → TOCA (a primeira que casar vence).
+//
+// Regra de ouro (vale também para a camada 2, na IA): a diferença entre DA
+// e Coordenação não é a palavra usada ("nota", "professor", "disciplina"
+// aparecem nos dois), é a INTENÇÃO. Quem busca informação/procedimento
+// oficial → Coordenação. Quem busca representação, apoio coletivo, ou está
+// relatando uma injustiça/insatisfação → DA. Por isso os padrões de DA
+// abaixo cobrem sinais de queixa/injustiça/coletivo, e são checados antes
+// dos padrões de Coordenação — uma frase com "nota" mas também com
+// "reclamar" cai em DA, não em Coordenação.
 
 import type { Sigla } from "./types";
 
-// DA — inclui "DATO", apelido usado pelos alunos para o Diretório
-// Acadêmico de TO (DA + TO = DATO), além de menção direta ao DA, ao
-// diretório acadêmico, à liga acadêmica ou a linguagem institucional
-// explícita (reivindicação, direitos, representação coletiva).
+// DA — menção direta ao DA/DATO, ou sinais de representação, reivindicação,
+// queixa coletiva ou tratamento injusto por parte de professor/turma.
 const DA_PATTERNS: RegExp[] = [
   /\bDA\b/, // sigla em maiúsculas — evita casar com a preposição "da"
-  /\bDATO\b/i, // apelido do DA de TO
+  /\bDATO\b/i, // apelido do DA de TO (DA + TO)
   /diret[oó]rio acad[eê]mico/i,
   /\bliga acad[eê]mica\b/i,
   /reivindica[cç][aã]o/i,
   /\bmeus? direitos?\b/i,
   /representa[cç][aã]o estudantil/i,
   /di[aá]logo institucional/i,
+  /reclamar|reclama[cç][aã]o/i,
+  /professor.{0,40}(injust|desrespeit|maltrat)/i,
+  /turma.{0,40}(injust|desrespeit|maltrat)/i,
+  /v[aá]rios? (alunos?|colegas?|da turma).{0,40}(mesmo problema|mesma situa[cç][aã]o|mesma disciplina)/i,
 ];
 
 // Menções que, mesmo citando DA/DATO/liga, são claramente sobre divulgar um
@@ -25,19 +36,71 @@ const DA_PATTERNS: RegExp[] = [
 // sobrepor à categoria de evento/divulgação.
 const DA_EXCECAO_DIVULGACAO: RegExp[] = [/divulgar|divulga[cç][aã]o/i];
 
-// COORDENAÇÃO — assuntos institucionais "sérios": pedidos de resposta
-// oficial, documentação formal ou procedimentos que só a coordenação
-// resolve.
+// COORDENAÇÃO — informação e procedimento oficial do curso. Agrupado pelas
+// categorias mapeadas com exemplos reais de perguntas de alunos.
 const COORDENACAO_PATTERNS: RegExp[] = [
+  // disciplinas e organização do curso
+  /hor[aá]rio (da|de) (minha |uma )?aula/i,
+  /qual (vai ser a |a )?sala/i,
+  /disciplina [ée] obrigat[oó]ria/i,
+  /trocar de disciplina/i,
+  /inscri[cç][aã]o (para|de) (uma )?disciplina/i,
+  /como funciona a depend[eê]ncia/i,
+  /cursar (essa |esta |a )?mat[eé]ria em outro per[ií]odo/i,
+  /pr[eé]-?requisitos?/i,
+  /carga hor[aá]ria/i,
+  /quando come[cç]a a (pr[oó]xima )?disciplina/i,
+
+  // estágio
+  /est[aá]gio obrigat[oó]rio/i,
+  /come[cç]ar o est[aá]gio/i,
+  /documentos?.{0,40}est[aá]gio/i,
+  /orientar sobre (o )?est[aá]gio/i,
+  /informa[cç][oõ]es sobre est[aá]gio/i,
+  /horas de est[aá]gio/i,
+
+  // faltas e frequência (dúvida institucional, não queixa)
+  /limite de faltas/i,
+  /como funciona a frequ[eê]ncia/i,
+  /justificar? uma falta/i,
+  /reposi[cç][aã]o de (uma )?atividade/i,
+  /ultrapassar o limite de faltas/i,
+
+  // notas e avaliações (informação/procedimento, não queixa)
+  /quando sai a nota/i,
+  /como funciona a recupera[cç][aã]o/i,
+  /avalia[cç][aã]o substitutiva/i,
+  /fecha o sistema de notas/i,
+  /solicitar revis[aã]o de (uma )?nota/i,
+  /prazo.{0,20}revis[aã]o de nota/i,
+
+  // documentos e procedimentos
+  /preciso de uma declara[cç][aã]o/i,
+  /onde solicito (esse |o )?documento/i,
+  /como fa[cç]o (esse |o )?requerimento/i,
+  /prazo para entregar (esse |o )?documento/i,
+  /onde encontro (esse |o )?formul[aá]rio/i,
+
+  // calendário e informações oficiais
+  /calend[aá]rio acad[eê]mico/i,
+  /quando termina o semestre/i,
+  /quando come[cç]am as f[eé]rias/i,
+  /vai ter aula (nesse|neste) dia/i,
+  /quando come[cç]a o pr[oó]ximo per[ií]odo/i,
+  /data da prova/i,
+  /reuni[aã]o de colegiado/i,
+
+  // caráter oficial explícito
   /resposta (oficial|institucional)/i,
+  /orienta[cç][aã]o oficial/i,
   /documenta[cç][aã]o oficial/i,
   /\batestado\b/i,
   /trancamento( de matr[ií]cula)?/i,
   /processo (administrativo|disciplinar)/i,
   /den[uú]ncia formal/i,
   /procedimento (oficial|institucional|formal)/i,
-  /assunto (grave|s[eé]rio)/i,
-  /quest[aã]o (grave|muito s[eé]ria)/i,
+  /falar com a coordena[cç][aã]o/i,
+  /d[uú]vida sobre o funcionamento do curso/i,
 ];
 
 // TOCA — projetos e produções dos próprios alunos, voltados à comunidade
@@ -63,7 +126,7 @@ export function aplicarRegraPrioridade(texto: string): RegraForcada | null {
       destino: "DA",
       categoria: "institucional",
       motivo:
-        "Sua mensagem menciona o DA (também conhecido como DATO), o diretório acadêmico, a liga acadêmica ou tem caráter institucional — esse é o caminho mais direto para representação e diálogo institucional.",
+        "Sua mensagem menciona o DA (também conhecido como DATO), o diretório acadêmico, a liga acadêmica, ou tem caráter de representação, reivindicação coletiva ou queixa sobre tratamento injusto — esse é o caminho mais direto para representação e diálogo institucional.",
     };
   }
 
@@ -72,7 +135,7 @@ export function aplicarRegraPrioridade(texto: string): RegraForcada | null {
       destino: "COORDENACAO",
       categoria: "institucional_oficial",
       motivo:
-        "Isso parece exigir uma resposta ou procedimento oficial, que só a Coordenação pode dar. Se depois disso você também quiser representação ou discutir a questão coletivamente, o DA pode ser um próximo passo.",
+        "Isso parece ser uma dúvida sobre informação ou procedimento oficial do curso, que a Coordenação responde diretamente. Se depois disso você também quiser representação ou discutir a questão coletivamente, o DA pode ser um próximo passo.",
     };
   }
 
